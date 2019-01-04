@@ -1,5 +1,5 @@
 /*  Quick and dirty implementation of an FHP cellular automaton (SDL2-based).
- *  Copyright (C) 2017-2018 - Jérôme Kirman
+ *  Copyright (C) 2017-2019 - Jérôme Kirman
  *
  *  This program is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU Affero General Public License as published by
@@ -26,8 +26,8 @@
 #define WIDTH  800
 #define HEIGHT 600
 
-#define REFLECT   0x0080
-#define PARTICLES 0x007F
+#define REFLECT   0x80
+#define PARTICLES 0x7F
 #define ST 0x40
 #define UR 0x20
 #define MR 0x10
@@ -66,8 +66,11 @@ UL |  x   y-1 | x-1  y-1
 #define HR 120
 
 #define HOLE(x,y) ( sqrt((HX-x)*(HX-x) + (HY-y)*(HY-y)) < HR )
+#define WALL(x,y) ( x == 1 || y == 1 || x == WIDTH-2 || y == HEIGHT-2 )
 
 typedef unsigned short cell;
+
+unsigned echo_fps (unsigned interval, void* param);
 
 unsigned echo_fps (unsigned interval, void* param)
 {
@@ -77,16 +80,10 @@ unsigned echo_fps (unsigned interval, void* param)
 	return interval;
 }
 
-// Place walls
-bool wall (int x, int y)
-{
-	return x == 1 || y == 1 || x == WIDTH-2 || y == HEIGHT-2;
-}
-
-int main ()
+int main (void)
 {
 	// Data init
-	srand(time(NULL));
+	srand((unsigned) time(NULL));
 
 	unsigned frames = 0;
 
@@ -100,9 +97,9 @@ int main ()
 		for (int y = 0 ; y < HEIGHT ; y++)
 		{
 			if (!HOLE(x,y))
-				odata[x][y] = rand()%1 ? 0 : 1 << rand()%6;
+				odata[x][y] = (cell) (rand()%1 ? 0 : 1 << rand()%6);
 
-			if (wall(x,y))
+			if (WALL(x,y))
 				odata[x][y] = REFLECT;
 		}
 	}
@@ -120,13 +117,12 @@ int main ()
 	SDL_Surface* buffer = SDL_CreateRGBSurface(0, WIDTH, HEIGHT, 32, 0, 0, 0, 0);
 	uint32_t* pixels = buffer->pixels;
 
-	int border   = 0x00ff00ff,
-	    particle = 0x00002a00;
+	unsigned border = 0x00ff00ff,
+	       particle = 0x00002a00;
 
 	// Main loop
 	bool end = false;
-	while (!end)
-	{
+	while (!end) {
 		// Handle events
 		while (SDL_PollEvent(&e))
 			if (e.type == SDL_QUIT)
@@ -134,34 +130,32 @@ int main ()
 
 		// Move, bump and draw particles
 		for (int x = 1 ; x < WIDTH-1 ; x++)
-			for (int y = 1 ; y < HEIGHT-1 ; y++)
-			{
+			for (int y = 1 ; y < HEIGHT-1 ; y++) {
 				// Move
 				if (y%2 == 0)
-					ndata[x][y] =
+					ndata[x][y] = (cell) (
 						(odata[x][y] & REFLECT) |
 						(odata[ x ][y+1] & UR) |
 						(odata[x-1][ y ] & MR) |
 						(odata[ x ][y-1] & DR) |
 						(odata[x+1][y-1] & DL) |
 						(odata[x+1][ y ] & ML) |
-						(odata[x+1][y+1] & UL);
+						(odata[x+1][y+1] & UL));
 				else
-					ndata[x][y] =
+					ndata[x][y] = (cell) (
 						(odata[x][y] & REFLECT) |
 						(odata[x-1][y+1] & UR) |
 						(odata[x-1][ y ] & MR) |
 						(odata[x-1][y-1] & DR) |
 						(odata[ x ][y-1] & DL) |
 						(odata[x+1][ y ] & ML) |
-						(odata[ x ][y+1] & UL);
+						(odata[ x ][y+1] & UL));
 
 				// Reflector cells + collisions.
-				if (ndata[x][y] & REFLECT)
-				{
-					cell r = ndata[x][y] & 0x3F;
-					r = r >> 3 | (r & 0x7) << 3;
-					ndata[x][y] = (ndata[x][y] & ~0x3F) | r;
+				if (ndata[x][y] & REFLECT) {
+					cell rf = ndata[x][y] & 0x3F;
+					rf = (cell) (rf >> 3 | (rf & 0x7) << 3);
+					ndata[x][y] = (cell) ((ndata[x][y] & ~0x3F) | rf);
 				}
 				else if (ndata[x][y] == (UR | DR | ML))
 					ndata[x][y] = UL | DL | MR;

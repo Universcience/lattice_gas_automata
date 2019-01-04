@@ -1,5 +1,5 @@
 /*  Quick and dirty implementation of an HPP cellular automaton (SDL2-based).
- *  Copyright (C) 2017-2018 - Jérôme Kirman
+ *  Copyright (C) 2017-2019 - Jérôme Kirman
  *
  *  This program is free software: you can redistribute it and/or modify it
  *  under the terms of the GNU Affero General Public License as published by
@@ -38,7 +38,9 @@
 
 #define HOLE(x,y) ( sqrt((HX-x)*(HX-x) + (HY-y)*(HY-y)) < HR )
 
-typedef char cell;
+typedef unsigned char cell;
+
+unsigned echo_fps (unsigned interval, void* param);
 
 unsigned echo_fps (unsigned interval, void* param)
 {
@@ -48,7 +50,7 @@ unsigned echo_fps (unsigned interval, void* param)
 	return interval;
 }
 
-int main ()
+int main (void)
 {
 	// SDL init
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
@@ -64,8 +66,8 @@ int main ()
 	SDL_Surface* buffer = SDL_CreateRGBSurface(0, WIDTH, HEIGHT, 32, 0, 0, 0, 0);
 	uint32_t* pixels = buffer->pixels;
 
-	int border = 0xff00ff00;
-	int particle = 0x003f0000;
+	unsigned border = 0xff00ff00,
+	       particle = 0x003f0000;
 
 	// > Paint borders
 	for (int x = 0 ; x < WIDTH ; x++)
@@ -74,19 +76,17 @@ int main ()
 		pixels[y*WIDTH] = pixels[(y+1)*WIDTH - 1] = border;
 
 	// Data init
-	srand(time(NULL));
+	srand((unsigned) time(NULL));
 
 	cell** odata = calloc(WIDTH, sizeof(*odata));
 	cell** ndata = calloc(WIDTH, sizeof(*ndata));
 	cell** tmp = NULL;
-	for (int x = 0 ; x < WIDTH ; x++)
-	{
+	for (int x = 0 ; x < WIDTH ; x++) {
 		odata[x] = calloc(HEIGHT, sizeof(**odata));
 		ndata[x] = calloc(HEIGHT, sizeof(**ndata));
-		for (int y = 0 ; y < HEIGHT ; y++)
-		{
+		for (int y = 0 ; y < HEIGHT ; y++) {
 			if (!HOLE(x,y))
-				odata[x][y] = 1 << rand()%4;
+				odata[x][y] = (cell) (1 << rand()%4);
 			if (x == 1 || y == 1 || x == WIDTH-2 || y == HEIGHT-2)
 				odata[x][y] = REFLECT;
 		}
@@ -94,8 +94,7 @@ int main ()
 
 	bool end = false;
 	// Main loop
-	while (!end)
-	{
+	while (!end) {
 		// Handle events
 		while (SDL_PollEvent(&e))
 			if (e.type == SDL_QUIT)
@@ -103,22 +102,20 @@ int main ()
 
 		// Move, bump and draw particles
 		for (int x = 1 ; x < WIDTH-1 ; x++)
-			for (int y = 1 ; y < HEIGHT-1 ; y++)
-			{
+			for (int y = 1 ; y < HEIGHT-1 ; y++) {
 				// Move
-				ndata[x][y] =
+				ndata[x][y] = (cell) (
 					(odata[x][y] & REFLECT) |
 					(odata[x][y+1] & NORTH) |
 					(odata[x-1][y] & EAST ) |
 					(odata[x][y-1] & SOUTH) |
-					(odata[x+1][y] & WEST );
+					(odata[x+1][y] & WEST ));
 
 				// Reflector cells + collisions.
-				if (ndata[x][y] & REFLECT)
-				{
-					cell r = ndata[x][y] & 0x0F;
-					r = r >> 2 | (r & 0x03) << 2;
-					ndata[x][y] = (ndata[x][y] & ~0x0F) | r;
+				if (ndata[x][y] & REFLECT) {
+					cell rf = ndata[x][y] & 0x0F;
+					rf = (cell) (rf >> 2 | (rf & 0x03) << 2);
+					ndata[x][y] = (cell) ((ndata[x][y] & ~0x0F) | rf);
 				}
 				else if (ndata[x][y] == (NORTH | SOUTH))
 					ndata[x][y] = EAST | WEST;
@@ -147,8 +144,7 @@ int main ()
 		frames++;
 	}
 
-	for (int x = 0 ; x < WIDTH ; x++)
-	{
+	for (int x = 0 ; x < WIDTH ; x++) {
 		free (odata[x]);
 		free (ndata[x]);
 	}
