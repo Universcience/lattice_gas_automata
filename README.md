@@ -14,7 +14,7 @@ Le [modèle FHP(en)](https://en.wikipedia.org/wiki/Lattice_gas_automaton#Hexagon
 
 Le programme fourni est conçu pour un système GNU/Linux ([Debian(fr)](https://www.debian.org/index.fr.html)), mais peut être aisément porté sur d'autres systèmes.
 
-Le fichier `Makefile` fourni permet de compiler les programmes C (cibles `hpp_model` et `fhp_model`).
+Le fichier `Makefile` fourni permet de compiler les programmes C (cibles `hpp` et `fhp`).
 
 ## Paquetages nécessaires (Debian Stretch)
 - `gcc`
@@ -26,8 +26,8 @@ Le fichier `Makefile` fourni permet de compiler les programmes C (cibles `hpp_mo
 git clone https://github.com/universcience/lattice_gas_automata
 cd lattice_gas_automata
 make
-./hpp_model
-./fhp_model
+./hpp
+./fhp
 ```
 
 # Licence

@@ -79,7 +79,7 @@ UL |  x   y-1 | x-1  y-1
 #define HR 120
 
 #define HOLE(x,y) ( sqrt((HX-x)*(HX-x) + (HY-y)*(HY-y)) < HR )
-#define WALL(x,y) (x == 1 || y == 1 || x == WIDTH-2 || y == HEIGHT-2)
+#define WALL(x,y) ( x == 1 || y == 1 || x == WIDTH-2 || y == HEIGHT-2 )
 
 typedef unsigned short cell;
 
@@ -182,7 +182,7 @@ int main (void)
 	unsigned frames = 0;
 	SDL_AddTimer (1000, echo_fps, &frames);
 
-	SDL_Window* mw = SDL_CreateWindow("Modèle HPP", 0, 0, WIDTH, HEIGHT, 0);
+	SDL_Window* mw = SDL_CreateWindow("Lattice Gas Automaton", 0, 0, WIDTH, HEIGHT, 0);
 	SDL_Renderer* r = SDL_CreateRenderer(mw, -1, 0);
 	SDL_Texture* t = SDL_CreateTexture(r, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, WIDTH, HEIGHT);
 
