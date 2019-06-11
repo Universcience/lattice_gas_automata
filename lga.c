@@ -18,6 +18,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include <time.h>
 #include <math.h>
 
@@ -111,6 +112,7 @@ inline unsigned bitc (cell n)
 	return c;
 }
 
+// Update cell (x,y) from odata to ndata, according to HPP rules.
 void hpp_update (cell** odata, cell** ndata, int x, int y)
 {
 	// Move
@@ -133,6 +135,7 @@ void hpp_update (cell** odata, cell** ndata, int x, int y)
 		ndata[x][y] = NORTH | SOUTH;
 }
 
+// Update cell (x,y) from odata to ndata, according to FHP rules.
 void fhp_update (cell** odata, cell** ndata, int x, int y)
 {
 	// Move
@@ -211,11 +214,20 @@ int main (void)
 
 	// Main loop
 	bool end = false;
+	useconds_t uwait = 1 << 14;
 	while (!end) {
 		// Handle events
 		while (SDL_PollEvent(&e))
 			if (e.type == SDL_QUIT)
 				end = true;
+			else if (e.type == SDL_KEYDOWN) {
+				if (e.key.keysym.sym == SDLK_ESCAPE)
+					end = true;
+				else if  (e.key.keysym.sym == SDLK_UP && uwait > 1)
+					uwait >>= 1;
+				else if (e.key.keysym.sym == SDLK_DOWN && uwait <= 1 << 20)
+					uwait <<= 1;
+			}
 
 		// Move, bump and draw particles
 		for (int x = 1 ; x < WIDTH-1 ; x++)
@@ -232,11 +244,13 @@ int main (void)
 		SDL_RenderCopy(r, t, NULL, NULL);
 		SDL_RenderPresent(r);
 
-		// Swap data buffers (time step)
+		// Swap data buffers
 		tmp = odata;
 		odata = ndata;
 		ndata = tmp;
 
+		// Time step
+		usleep(uwait);
 		frames++;
 	}
 
